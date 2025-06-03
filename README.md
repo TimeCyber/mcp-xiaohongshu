@@ -92,9 +92,9 @@ rednote-mcp init 30
 
 ### 2. MCP客户端配置
 
-#### Cursor编辑器配置
+#### MCP-X编辑器配置
 
-在 Cursor 的 settings.json 中添加以下配置：
+在 MCP-X 的 工具管理 中添加以下配置：
 
 **方式一：使用全局安装的命令**
 ```json
@@ -141,28 +141,9 @@ rednote-mcp init 30
 }
 ```
 
-#### Claude Desktop配置
-
-在Claude Desktop的配置文件中添加：
-
-**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Linux:** `~/.config/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "rednote": {
-      "command": "rednote-mcp",
-      "args": ["--stdio"]
-    }
-  }
-}
-```
-
 ### 3. 重启客户端
 
-配置完成后，重启您的MCP客户端（Cursor或Claude Desktop）使配置生效。
+配置完成后，重启您的MCP客户端（Cursor或MCP-X）使配置生效。
 
 ## 🛠️ 使用方法
 
