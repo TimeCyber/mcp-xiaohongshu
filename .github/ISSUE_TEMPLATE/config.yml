@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Bug Report (English)
+    url: https://github.com/ifuryst/rednote-mcp/issues/new?template=bug_report_en.md
+    about: Report a bug in English
+  - name: 问题报告 (中文)
+    url: https://github.com/ifuryst/rednote-mcp/issues/new?template=bug_report_zh.md
+    about: 用中文报告问题 

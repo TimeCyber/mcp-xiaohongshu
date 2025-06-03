@@ -1,0 +1,1 @@
+{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "add_note", "arguments": {"title": "测试笔记标题", "content": "这是一个测试笔记的内容，用于验证发布功能是否正常工作。", "tags": ["测试", "MCP", "自动化"], "isPrivate": false}}} 
