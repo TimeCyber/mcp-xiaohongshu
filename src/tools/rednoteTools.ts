@@ -26,6 +26,7 @@ export interface AddNoteParams {
   content: string
   tags?: string[]
   images?: string[]
+  videos?: string[]
   isPrivate?: boolean
 }
 
@@ -379,118 +380,191 @@ export class RedNoteTools {
         // 如果检查失败，继续执行，让后续步骤来验证
       }
 
-      // Auto-switch to "上传图文" tab if not already selected
-      logger.info('Checking and switching to upload image tab')
-      try {
-        // 等待页面加载完成
-        await this.randomDelay(2, 3)
-        
-        // 首先尝试使用JavaScript强制点击
-        logger.info('Attempting to click "上传图文" tab using JavaScript')
-        const tabClicked = await this.page.evaluate(() => {
-          // 查找所有包含"上传图文"文本的元素
-          const elements = Array.from(document.querySelectorAll('*'));
-          for (const el of elements) {
-            if (el.textContent?.includes('上传图文') && el.textContent.trim() === '上传图文') {
-              // 滚动到元素位置
-              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              // 强制点击
-              (el as HTMLElement).click();
-              return true;
-            }
-          }
-          return false;
-        });
-        
-        if (tabClicked) {
-          logger.info('Successfully clicked "上传图文" tab using JavaScript')
-          await this.randomDelay(3, 5) // 等待tab切换完成
-        } else {
-          logger.warn('JavaScript click failed, trying Playwright click')
-          
-          // 备用方案：使用 Playwright 强制点击
-          try {
-            const tabElement = await this.page.locator('text=上传图文').first();
-            await tabElement.scrollIntoViewIfNeeded();
-            await tabElement.click({ force: true });
-            logger.info('Successfully clicked tab using Playwright force click')
-            await this.randomDelay(3, 5)
-          } catch (clickError) {
-            logger.error('Both JavaScript and Playwright clicks failed')
-            return {
-              success: false,
-              message: '无法点击"上传图文"tab，请检查页面状态'
-            }
-          }
-        }
-        
-        logger.info('Tab switching completed, waiting for upload interface')
-      } catch (error) {
-        logger.error('Error switching to image tab:', error)
-        return {
-          success: false,
-          message: '切换到图文上传页面时出错'
-        }
-      }
-
-      // Wait for the upload area to be visible after tab switch
-      logger.info('Waiting for upload area after tab switch')
-      try {
-        // 等待上传区域出现
-        await this.page.waitForSelector('input[type="file"], [class*="upload"], .upload-area, .dnd-area', {
-          timeout: 15000
-        })
-        logger.info('Upload area found')
-      } catch (error) {
-        logger.error('Upload area not found after tab switch')
-        return {
-          success: false,
-          message: '切换tab后未找到上传区域'
-        }
-      }
-
-      // Handle image uploads if provided
-      if (params.images && params.images.length > 0) {
-        logger.info(`Uploading ${params.images.length} images`)
-        
-        // 查找文件上传输入框
-        const fileInput = await this.page.$('input[type="file"]')
-        if (!fileInput) {
-          logger.error('File input not found after tab switch')
-          return {
-            success: false,
-            message: '切换tab后未找到文件上传输入框'
-          }
-        }
-
-        // 上传图片文件
+      // 判断上传类型并执行对应的上传流程
+      const hasVideos = params.videos && params.videos.length > 0
+      const hasImages = params.images && params.images.length > 0
+      
+      if (hasVideos) {
+        // 视频上传：直接上传，不需要切换tab
+        logger.info('开始视频上传流程（直接上传）')
         try {
-          logger.info('Setting input files...')
-          await fileInput.setInputFiles(params.images)
-          logger.info('Images uploaded successfully')
+          // 等待页面加载完成
+          await this.randomDelay(2, 3)
           
-          // 等待图片处理完成
-          await this.randomDelay(3, 5)
+          // 直接查找视频上传区域，不点击tab
+          logger.info('查找视频上传区域')
           
-          // 等待图片预览出现 - 使用更宽容的选择器
+          // 等待视频上传区域出现
           try {
-            await this.page.waitForSelector('img, .preview, [class*="preview"], [class*="image"], .upload-success', {
+            await this.page.waitForSelector('input[type="file"], [class*="upload"], .upload-area, .dnd-area', {
               timeout: 15000
             })
-            logger.info('Image preview loaded')
-          } catch (previewError) {
-            logger.warn('Could not find image preview, but continuing with upload')
-            // 额外等待图片处理
-            await this.randomDelay(3, 5)
+            logger.info('找到上传区域')
+          } catch (error) {
+            logger.error('未找到上传区域')
+            return {
+              success: false,
+              message: '未找到视频上传区域'
+            }
           }
-          
+
+          // 查找文件上传输入框
+          const fileInput = await this.page.$('input[type="file"]')
+          if (!fileInput) {
+            logger.error('未找到文件上传输入框')
+            return {
+              success: false,
+              message: '未找到文件上传输入框'
+            }
+          }
+
+          // 上传视频文件
+          logger.info(`上传 ${params.videos!.length} 个视频文件`)
+          try {
+            logger.info('设置视频文件...')
+            await fileInput.setInputFiles(params.videos!)
+            logger.info('视频文件上传成功')
+            
+            // 等待视频处理完成（视频处理通常需要更长时间）
+            await this.randomDelay(8, 12)
+            
+            // 等待视频预览出现
+            try {
+              await this.page.waitForSelector('video, .video-preview, [class*="video"], [class*="preview"], .upload-success', {
+                timeout: 30000 // 视频处理需要更长时间
+              })
+              logger.info('视频预览加载完成')
+            } catch (previewError) {
+              logger.warn('未找到视频预览，但继续执行')
+              // 额外等待视频处理
+              await this.randomDelay(5, 8)
+            }
+            
+          } catch (error) {
+            logger.error('视频上传失败:', error)
+            return {
+              success: false,
+              message: `视频上传失败: ${error instanceof Error ? error.message : '未知错误'}`
+            }
+          }
         } catch (error) {
-          logger.error('Error uploading images:', error)
+          logger.error('视频上传流程错误:', error)
           return {
             success: false,
-            message: `图片上传失败: ${error instanceof Error ? error.message : '未知错误'}`
+            message: '视频上传流程出错'
           }
         }
+      } else if (hasImages) {
+        // 图文上传：需要切换到"上传图文"tab
+        logger.info('开始图文上传流程（切换到上传图文tab）')
+        try {
+          // 等待页面加载完成
+          await this.randomDelay(2, 3)
+          
+          // 点击"上传图文"tab进行切换
+          logger.info('点击"上传图文"tab')
+          const tabClicked = await this.page.evaluate(() => {
+            // 查找所有包含"上传图文"文本的元素
+            const elements = Array.from(document.querySelectorAll('*'));
+            for (const el of elements) {
+              if (el.textContent?.includes('上传图文') && el.textContent.trim() === '上传图文') {
+                // 滚动到元素位置
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // 强制点击
+                (el as HTMLElement).click();
+                return true;
+              }
+            }
+            return false;
+          });
+          
+          if (tabClicked) {
+            logger.info('成功点击"上传图文"tab')
+            await this.randomDelay(3, 5) // 等待tab切换完成
+          } else {
+            logger.warn('JavaScript点击失败，尝试Playwright点击')
+            
+            // 备用方案：使用 Playwright 强制点击
+            try {
+              const tabElement = await this.page.locator('text=上传图文').first();
+              await tabElement.scrollIntoViewIfNeeded();
+              await tabElement.click({ force: true });
+              logger.info('Playwright强制点击成功')
+              await this.randomDelay(3, 5)
+            } catch (clickError) {
+              logger.error('两种点击方式都失败')
+              return {
+                success: false,
+                message: '无法点击"上传图文"tab，请检查页面状态'
+              }
+            }
+          }
+          
+          // 等待上传区域出现
+          logger.info('等待图文上传区域')
+          try {
+            await this.page.waitForSelector('input[type="file"], [class*="upload"], .upload-area, .dnd-area', {
+              timeout: 15000
+            })
+            logger.info('图文上传区域已找到')
+          } catch (error) {
+            logger.error('切换tab后未找到上传区域')
+            return {
+              success: false,
+              message: '切换tab后未找到上传区域'
+            }
+          }
+
+          // 查找文件上传输入框
+          const fileInput = await this.page.$('input[type="file"]')
+          if (!fileInput) {
+            logger.error('切换tab后未找到文件上传输入框')
+            return {
+              success: false,
+              message: '切换tab后未找到文件上传输入框'
+            }
+          }
+
+          // 上传图片文件
+          logger.info(`上传 ${params.images!.length} 个图片文件`)
+          try {
+            logger.info('设置图片文件...')
+            await fileInput.setInputFiles(params.images!)
+            logger.info('图片文件上传成功')
+            
+            // 等待图片处理完成
+            await this.randomDelay(3, 5)
+            
+            // 等待图片预览出现
+            try {
+              await this.page.waitForSelector('img, .preview, [class*="preview"], [class*="image"], .upload-success', {
+                timeout: 15000
+              })
+              logger.info('图片预览加载完成')
+            } catch (previewError) {
+              logger.warn('未找到图片预览，但继续执行')
+              // 额外等待图片处理
+              await this.randomDelay(3, 5)
+            }
+            
+          } catch (error) {
+            logger.error('图片上传失败:', error)
+            return {
+              success: false,
+              message: `图片上传失败: ${error instanceof Error ? error.message : '未知错误'}`
+            }
+          }
+        } catch (error) {
+          logger.error('图文上传流程错误:', error)
+          return {
+            success: false,
+            message: '切换到图文上传页面时出错'
+          }
+        }
+      } else {
+        // 纯文字发布：直接进入表单填写
+        logger.info('纯文字发布，等待页面加载')
+        await this.randomDelay(2, 3)
       }
 
       // Fill in the title

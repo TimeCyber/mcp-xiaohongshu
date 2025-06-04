@@ -4,6 +4,7 @@
 [![简体中文](https://img.shields.io/badge/简体中文-点击查看-orange)](README.md)
 [![npm](https://img.shields.io/npm/v/rednote-mcp)](https://www.npmjs.com/package/rednote-mcp)
 
+
 小红书内容访问和发布的MCP服务器，支持通过Model Context Protocol在AI客户端中搜索、获取和发布小红书内容。
 
 https://github.com/user-attachments/assets/06b2c67f-d9ed-4a30-8f1d-9743f3edaa3a
@@ -309,8 +310,8 @@ A: 重新运行 `rednote-mcp init` 命令进行登录。
 ### Q: 图片上传失败？
 A: 确保图片路径是绝对路径，并且图片文件存在且格式正确（JPG/PNG）。
 
-### Q: 在Cursor中配置后无法使用？
-A: 检查配置文件语法是否正确，重启Cursor，确保已执行登录命令。
+### Q: 在MCP-X中配置后无法使用？
+A: 检查配置文件语法是否正确，重启MCP-X，确保已执行登录命令。
 
 ### Q: 搜索结果为空？
 A: 检查关键词是否合适，确保网络连接正常，登录状态有效。

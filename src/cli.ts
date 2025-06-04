@@ -120,13 +120,15 @@ server.tool(
     content: z.string().describe('笔记内容'),
     tags: z.array(z.string()).optional().describe('标签列表'),
     images: z.array(z.string()).optional().describe('图片文件路径列表'),
+    videos: z.array(z.string()).optional().describe('视频文件路径列表'),
     isPrivate: z.boolean().optional().describe('是否设为私密笔记')
   },
-  async ({ title, content, tags, images, isPrivate }: { 
+  async ({ title, content, tags, images, videos, isPrivate }: { 
     title: string; 
     content: string; 
     tags?: string[]; 
     images?: string[]; 
+    videos?: string[];
     isPrivate?: boolean 
   }) => {
     logger.info(`Publishing note with title: ${title}`)
@@ -137,6 +139,7 @@ server.tool(
         content,
         tags,
         images,
+        videos,
         isPrivate
       })
       
